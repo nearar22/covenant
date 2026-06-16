@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { DIMENSIONS, type Dimension } from '@/lib/contract';
 
 interface TrustRadarProps {
@@ -16,6 +17,13 @@ const LABELS: Record<Dimension, string> = {
   timeliness: 'TIMELINESS',
 };
 
+/**
+ * TrustRadar reads as a live instrument:
+ *  - the reputation polygon animates open from the center on mount and
+ *    re-animates whenever the score signature changes (eased over ~900ms)
+ *  - a periodic sweep arc rotates over the rings (CSS radarsweep keyframe)
+ *  - vertices ping in as the polygon settles
+ */
 export function TrustRadar({
   scores,
   size = 240,
@@ -27,9 +35,40 @@ export function TrustRadar({
   const r = size / 2 - 34;
   const axes = DIMENSIONS.length;
 
+  // Animated progress 0..1 that drives the polygon opening from center.
+  const [progress, setProgress] = useState(0);
+  const rafRef = useRef(0);
+  // A stable signature so we only re-run the draw-in when values change.
+  const signature = DIMENSIONS.map((d) => scores[d]).join('|');
+
+  useEffect(() => {
+    cancelAnimationFrame(rafRef.current);
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      setProgress(1);
+      return;
+    }
+    const duration = 900;
+    const begin = performance.now();
+    setProgress(0);
+    const step = (now: number) => {
+      const elapsed = now - begin;
+      const tRaw = Math.min(1, elapsed / duration);
+      // easeOutCubic for a settling instrument feel.
+      const eased = 1 - Math.pow(1 - tRaw, 3);
+      setProgress(eased);
+      if (tRaw < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [signature]);
+
   const point = (i: number, value: number) => {
     const angle = (Math.PI * 2 * i) / axes - Math.PI / 2;
-    const radius = (Math.max(0, Math.min(100, value)) / 100) * r;
+    const radius = ((Math.max(0, Math.min(100, value)) / 100) * r) * progress;
     return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
   };
 
@@ -88,7 +127,7 @@ export function TrustRadar({
       {sweep && (
         <g
           style={{ transformOrigin: `${cx}px ${cy}px` }}
-          className="animate-sweep"
+          className="animate-radarsweep"
         >
           <line
             x1={cx}
@@ -97,12 +136,12 @@ export function TrustRadar({
             y2={cy - r}
             stroke={accent}
             strokeWidth={1.5}
-            opacity={0.5}
+            opacity={0.55}
           />
           <polygon
-            points={`${cx},${cy} ${cx},${cy - r} ${cx + r * 0.32},${cy - r * 0.94}`}
+            points={`${cx},${cy} ${cx},${cy - r} ${cx + r * 0.34},${cy - r * 0.94}`}
             fill={accent}
-            opacity={0.08}
+            opacity={0.1}
           />
         </g>
       )}
@@ -113,10 +152,20 @@ export function TrustRadar({
         fillOpacity={0.16}
         stroke={accent}
         strokeWidth={1.75}
+        style={{ filter: `drop-shadow(0 0 6px ${accent}40)` }}
       />
       {DIMENSIONS.map((d, i) => {
         const [px, py] = point(i, scores[d]);
-        return <circle key={d} cx={px} cy={py} r={2.6} fill={accent} />;
+        return (
+          <circle
+            key={d}
+            cx={px}
+            cy={py}
+            r={2.6 + (1 - progress) * 1.5}
+            fill={accent}
+            opacity={0.4 + 0.6 * progress}
+          />
+        );
       })}
 
       {DIMENSIONS.map((d, i) => {

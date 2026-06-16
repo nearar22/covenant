@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { ExternalLink, ShieldCheck } from 'lucide-react';
 import { type AgentDossier, DIMENSIONS, EXPLORER } from '@/lib/contract';
 import { shortAddr, trustTier } from '@/lib/format';
@@ -31,7 +32,7 @@ export function DossierPanel({ agent }: { agent: AgentDossier | null }) {
     : { reliability: 0, quality: 0, honesty: 0, timeliness: 0 };
 
   return (
-    <section className="panel flex h-full flex-col">
+    <section className="panel animate-edgeglow flex h-full flex-col">
       <PanelHeading
         index="02"
         title="Trust Radar"
@@ -105,8 +106,13 @@ export function DossierPanel({ agent }: { agent: AgentDossier | null }) {
             ) : (
               <ul className="space-y-1.5">
                 {[...agent.history].reverse().map((h, i) => (
-                  <li
+                  <motion.li
                     key={`${h.commission}-${i}`}
+                    initial={{ opacity: 0, x: 8 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, margin: '-20px' }}
+                    transition={{ delay: Math.min(i * 0.04, 0.3) }}
+                    whileHover={{ x: 3, borderColor: '#2c3a4d' }}
                     className="flex items-center justify-between border border-line bg-base-800 px-2.5 py-1.5"
                   >
                     <span className="min-w-0 flex-1 truncate text-xs text-ink-300">
@@ -118,7 +124,7 @@ export function DossierPanel({ agent }: { agent: AgentDossier | null }) {
                       </span>
                       <Tag tone={rulingTone(h.ruling)}>{h.ruling}</Tag>
                     </div>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
             )}

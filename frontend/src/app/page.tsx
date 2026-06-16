@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { StatusBar } from '@/components/StatusBar';
+import { ConsoleBackdrop } from '@/components/ConsoleBackdrop';
 import { AgentRail } from '@/components/AgentRail';
 import { DossierPanel } from '@/components/DossierPanel';
 import { CommissionLedger } from '@/components/CommissionLedger';
@@ -12,6 +14,11 @@ import { DataError, ErrorBoundary } from '@/components/ErrorState';
 import { useWallet } from '@/hooks/useWallet';
 import { useContractData } from '@/hooks/useContractData';
 import { type Commission } from '@/lib/contract';
+
+const panelEnter = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0 },
+};
 
 export default function ConsolePage() {
   const wallet = useWallet();
@@ -57,64 +64,87 @@ export default function ConsolePage() {
     openModal(c.status === 'OPEN' ? 'accept' : 'deliver', c);
 
   return (
-    <div className="grid-field min-h-screen">
-      <Header wallet={wallet} />
-      <StatusBar stats={data.stats} lastUpdated={data.lastUpdated} />
+    <div className="grid-field relative min-h-screen">
+      <ConsoleBackdrop />
+      <div className="relative z-10">
+        <Header wallet={wallet} />
+        <StatusBar stats={data.stats} lastUpdated={data.lastUpdated} />
 
-      {stale && (
-        <div className="border-b border-amber/30 bg-amber/5 px-4 py-1 text-center label-mono text-amber">
-          DATA MAY BE STALE. THE NETWORK COULD BE SLOW; NEXT SYNC PENDING.
-        </div>
-      )}
-
-      <main className="mx-auto w-full max-w-[1600px] p-3">
-        {data.error && !data.loading && data.agents.length === 0 ? (
-          <div className="py-10">
-            <DataError message={data.error} onRetry={data.refresh} />
-          </div>
-        ) : (
-          <div className="grid gap-3 lg:grid-cols-[300px_minmax(0,1fr)_360px]">
-            <div className="h-[calc(100vh-220px)] min-h-[480px]">
-              <ErrorBoundary>
-                <AgentRail
-                  agents={data.agents}
-                  loading={data.loading}
-                  selected={selectedAgent}
-                  onSelect={setSelectedAgent}
-                />
-              </ErrorBoundary>
-            </div>
-
-            <div className="flex h-[calc(100vh-220px)] min-h-[480px] flex-col gap-3">
-              <div className="min-h-0 flex-1">
-                <ErrorBoundary>
-                  <DossierPanel agent={selectedDossier} />
-                </ErrorBoundary>
-              </div>
-              <div className="min-h-0 flex-1">
-                <ErrorBoundary>
-                  <CommissionLedger
-                    commissions={data.commissions}
-                    loading={data.loading}
-                    onPost={() => openModal('post', null)}
-                    onAct={onActCommission}
-                    activeAgent={wallet.address ?? null}
-                  />
-                </ErrorBoundary>
-              </div>
-            </div>
-
-            <div className="h-[calc(100vh-220px)] min-h-[480px]">
-              <ErrorBoundary>
-                <SettlementStream
-                  settlements={data.settlements}
-                  loading={data.loading}
-                />
-              </ErrorBoundary>
-            </div>
+        {stale && (
+          <div className="border-b border-amber/30 bg-amber/5 px-4 py-1 text-center label-mono text-amber">
+            DATA MAY BE STALE. THE NETWORK COULD BE SLOW; NEXT SYNC PENDING.
           </div>
         )}
-      </main>
+
+        <main className="mx-auto w-full max-w-[1600px] p-3">
+          {data.error && !data.loading && data.agents.length === 0 ? (
+            <div className="py-10">
+              <DataError message={data.error} onRetry={data.refresh} />
+            </div>
+          ) : (
+            <motion.div
+              className="grid gap-3 lg:grid-cols-[300px_minmax(0,1fr)_360px]"
+              initial="hidden"
+              animate="show"
+              variants={{
+                hidden: {},
+                show: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } },
+              }}
+            >
+              <motion.div
+                variants={panelEnter}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="h-[calc(100vh-220px)] min-h-[480px]"
+              >
+                <ErrorBoundary>
+                  <AgentRail
+                    agents={data.agents}
+                    loading={data.loading}
+                    selected={selectedAgent}
+                    onSelect={setSelectedAgent}
+                  />
+                </ErrorBoundary>
+              </motion.div>
+
+              <motion.div
+                variants={panelEnter}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="flex h-[calc(100vh-220px)] min-h-[480px] flex-col gap-3"
+              >
+                <div className="min-h-0 flex-1">
+                  <ErrorBoundary>
+                    <DossierPanel agent={selectedDossier} />
+                  </ErrorBoundary>
+                </div>
+                <div className="min-h-0 flex-1">
+                  <ErrorBoundary>
+                    <CommissionLedger
+                      commissions={data.commissions}
+                      loading={data.loading}
+                      onPost={() => openModal('post', null)}
+                      onAct={onActCommission}
+                      activeAgent={wallet.address ?? null}
+                    />
+                  </ErrorBoundary>
+                </div>
+              </motion.div>
+
+              <motion.div
+                variants={panelEnter}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="h-[calc(100vh-220px)] min-h-[480px]"
+              >
+                <ErrorBoundary>
+                  <SettlementStream
+                    settlements={data.settlements}
+                    loading={data.loading}
+                  />
+                </ErrorBoundary>
+              </motion.div>
+            </motion.div>
+          )}
+        </main>
+      </div>
 
       {modal && (
         <ActionModal

@@ -67,14 +67,6 @@ export function Header({ wallet }: { wallet: ReturnType<typeof useWallet> }) {
           >
             EXPLORER <ExternalLink className="h-3 w-3" />
           </a>
-          <a
-            href={FAUCET}
-            target="_blank"
-            rel="noreferrer"
-            className="focusable flex items-center gap-1 label-mono text-ink-300 hover:text-cyan"
-          >
-            <Droplet className="h-3 w-3" /> FAUCET
-          </a>
         </div>
 
         <div className="ml-auto">
@@ -137,6 +129,14 @@ export function Header({ wallet }: { wallet: ReturnType<typeof useWallet> }) {
                         <LogOut className="h-3 w-3" /> EXIT
                       </button>
                     </div>
+                    <a
+                      href={FAUCET}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="focusable mt-2 flex items-center justify-center gap-1.5 border border-line py-1.5 label-mono text-ink-300 hover:border-cyan/50 hover:text-cyan"
+                    >
+                      <Droplet className="h-3 w-3" /> TESTNET FAUCET
+                    </a>
                   </motion.div>
                 )}
               </AnimatePresence>

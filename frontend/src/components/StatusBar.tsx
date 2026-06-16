@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
 import { CONTRACT_ADDRESS, DEPLOY_TX, EXPLORER, type Stats } from '@/lib/contract';
 import { shortAddr } from '@/lib/format';
 
@@ -12,7 +13,18 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex items-baseline gap-2">
       <span className="label-mono text-ink-500">{label}</span>
-      <span className="font-mono text-sm text-lime">{value}</span>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={String(value)}
+          initial={{ opacity: 0, y: -6, color: '#3ee0e0' }}
+          animate={{ opacity: 1, y: 0, color: '#c4f042' }}
+          exit={{ opacity: 0, y: 6 }}
+          transition={{ duration: 0.35 }}
+          className="font-mono text-sm"
+        >
+          {value}
+        </motion.span>
+      </AnimatePresence>
     </div>
   );
 }
@@ -22,7 +34,7 @@ export function StatusBar({ stats, lastUpdated }: StatusBarProps) {
     ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s`
     : '--';
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-line bg-base-900 px-4 py-2">
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-line bg-base-900/90 px-4 py-2 backdrop-blur">
       <Metric label="COMMISSIONS" value={stats?.commissions ?? '--'} />
       <Metric label="SETTLED" value={stats?.settlements ?? '--'} />
       <Metric label="FULFILLED" value={stats?.fulfilled ?? '--'} />

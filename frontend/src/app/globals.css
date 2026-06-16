@@ -41,10 +41,40 @@ body {
 .panel {
   background: #0e131b;
   border: 1px solid #1f2937;
+  position: relative;
+  box-shadow:
+    0 1px 0 0 rgba(232, 237, 244, 0.02) inset,
+    0 18px 40px -28px rgba(0, 0, 0, 0.8);
+}
+
+/* Hairline top accent so panels read as machined, not flat. */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(196, 240, 66, 0.25),
+    rgba(62, 224, 224, 0.18),
+    transparent
+  );
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .panel-bright {
   border-color: #2c3a4d;
+}
+
+/* Live ticker beacon used by the settlement stream header. */
+.beacon {
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+  border-radius: 9999px;
+  background: #3ee0e0;
 }
 
 .label-mono {

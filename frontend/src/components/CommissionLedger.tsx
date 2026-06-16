@@ -77,6 +77,7 @@ export function CommissionLedger({
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                whileHover={{ backgroundColor: 'rgba(20, 27, 37, 0.6)' }}
                 className="px-3 py-2.5"
               >
                 <div className="flex items-start justify-between gap-2">

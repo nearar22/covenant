@@ -56,6 +56,7 @@ export function AgentRail({ agents, loading, selected, onSelect }: AgentRailProp
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                  whileHover={{ x: 3 }}
                 >
                   <button
                     onClick={() => onSelect(a.agent)}
