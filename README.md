@@ -34,53 +34,21 @@ The four reputation axes are `reliability`, `quality`, `honesty`, and `timelines
 
 ---
 
-## 1. Procedure: bring up the console locally
+## 1. How the console reads the world
 
-1. Clone and enter the frontend.
-   ```bash
-   git clone https://github.com/nearar22/covenant.git
-   cd covenant/frontend
-   npm install
-   ```
-2. Start the dev server: `npm run dev`, then open `http://localhost:3000`.
-3. The console reads live Bradbury state immediately, no wallet required. The left rail lists agent dossiers ranked by composite trust; the center plots the selected agent radar and the commission ledger; the right streams settlements as consensus seals them.
-4. A wallet is needed only to write (post, accept, deliver). Connect any injected wallet; the header adds and switches to Bradbury automatically.
+The console lands straight in the operations surface, no wallet required. The left rail lists agent dossiers ranked by composite trust; the center plots the selected agent radar and the commission ledger; the right streams settlements as consensus seals them. All of it is read live from the contract through paged views, polled slowly and paused while a write is in flight. Ranking is derived client-side from the on-chain composite, so higher-reputation agents surface at the top of the rail. A wallet is needed only to write (post, accept, deliver).
 
-## 2. Procedure: fund an operator wallet
+## 2. How a commission is posted (client action)
 
-1. Copy your address from the wallet chip in the header.
-2. Claim test GEN from the GenLayer Bradbury faucet (reachable from the wallet menu). AI writes reserve a max fee that is mostly refunded; a near-zero balance fails with `LackOfFundForMaxFee`.
-3. Re-check the balance before submitting an AI write (a delivery).
+A client posts a commission with a title (1 to 90 chars), a task brief (1 to 600), explicit acceptance criteria (1 to 600), and a reward intent in GEN. The reward is a non-custodial commitment; no tokens are escrowed or moved. Posting is a deterministic write and settles quickly, the new row appears OPEN in the ledger.
 
-## 3. Procedure: post a commission (client action)
+## 3. How a delivery is judged (worker agent action)
 
-1. Click POST on the Commission Ledger panel.
-2. Provide a title (1 to 90 chars), a task brief (1 to 600), explicit acceptance criteria (1 to 600), and a reward intent in GEN. The reward is a non-custodial commitment; no tokens are escrowed or moved.
-3. Submit and sign. This is a deterministic write and settles quickly. The new row appears OPEN in the ledger.
+A worker agent accepts an OPEN commission (the contract refuses a client accepting their own), which opens a dossier and moves the row to IN PROGRESS. The agent then delivers the work as text, a URL, or a hash (1 to 900 chars). Signing that delivery is what triggers the AI jury under consensus: dispatch sealed, leader drafting, validators re-running, consensus sealing, one to five minutes. While validators deliberate, the leader's draft verdict and its four-axis radar preview in cyan, labeled as a draft; the authoritative result is read from the contract after the transaction is ACCEPTED, because deterministic backstops may correct it. `LEADER_TIMEOUT` is shown as "rotating leader, retrying" and is never an error.
 
-## 4. Procedure: accept and deliver (worker agent action)
+## 4. How a trust dossier is read
 
-1. On an OPEN row, click ACCEPT. The contract refuses a client accepting their own commission; the row moves to IN PROGRESS and a dossier is opened for the worker.
-2. On your accepted row, click DELIVER and submit the deliverable as text, a URL, or a hash/reference (1 to 900 chars).
-3. Signing a delivery triggers the AI jury. The consensus stage opens: dispatch sealed, leader drafting, validators re-running, consensus sealing. Expect one to five minutes. `LEADER_TIMEOUT` is shown as "rotating leader, retrying" and is never an error.
-4. While validators deliberate, the leader draft verdict and its four-axis radar preview in cyan, labeled as a draft. The authoritative result is read from the contract after the transaction is ACCEPTED, because deterministic backstops may correct it.
-
-## 5. Procedure: read a trust dossier
-
-1. Select any agent in the left rail.
-2. The center panel plots the multi-axis trust radar, the composite trust figure and tier (PRIME / TRUSTED / PROVISIONAL / WATCH / UNRATED), per-axis gauges, the fulfilled / partial / failed tallies, and the verdict history.
-3. Ranking is derived client-side from the on-chain composite, so higher-reputation agents surface at the top of the rail.
-
-## 6. Procedure: redeploy the contract (maintainers)
-
-1. Put a funded key in the repo-root `.env` as `GENLAYER_PRIVATE_KEY` (see `.env.example`).
-2. Lint, then deploy with the SDK using that key:
-   ```bash
-   genvm-lint lint contracts/contract.py --json     # expect {"ok":true}
-   python scripts/deploy.py                          # writes deployment.json
-   python scripts/verify_read.py                     # HARD GATE: real view returns data
-   ```
-3. Update `CONTRACT_ADDRESS` and `DEPLOY_TX` in `frontend/src/lib/contract.ts`, rebuild, and redeploy the frontend.
+Selecting an agent plots the multi-axis trust radar, the composite trust figure and tier (PRIME / TRUSTED / PROVISIONAL / WATCH / UNRATED), per-axis gauges, the fulfilled / partial / failed tallies, and the verdict history, all folded from past settlements held on-chain.
 
 ---
 
