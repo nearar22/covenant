@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Radio } from 'lucide-react';
 import { type Settlement } from '@/lib/contract';
 import { shortAddr } from '@/lib/format';
-import { PanelHeading, Skeleton, Tag } from './ui';
+import { MiniBars, PanelHeading, Skeleton, Tag } from './ui';
 
 interface SettlementStreamProps {
   settlements: Settlement[];
@@ -46,16 +46,25 @@ export function SettlementStream({ settlements, loading }: SettlementStreamProps
   }, [settlements]);
 
   return (
-    <section className="panel flex h-full flex-col">
+    <section className="panel panel-ticks flex h-full flex-col">
       <PanelHeading
         index="04"
         title="Settlement Stream"
+        led="cyan"
         right={
           <span className="flex items-center gap-1.5 label-mono text-cyan">
             <span className="beacon animate-tickerpulse" /> LIVE
           </span>
         }
       />
+      {settlements.length > 0 && (
+        <div className="flex items-center justify-between border-b border-line bg-base-800/40 px-3 py-1">
+          <span className="label-mono text-ink-500">VERDICT TAPE</span>
+          <span className="tnum label-mono text-ink-500">
+            {String(settlements.length).padStart(3, '0')} SEALED
+          </span>
+        </div>
+      )}
       <div className="scrollbar-thin flex-1 overflow-y-auto">
         {loading && settlements.length === 0 ? (
           <div className="space-y-2 p-3">
@@ -76,6 +85,15 @@ export function SettlementStream({ settlements, loading }: SettlementStreamProps
             <AnimatePresence initial={false}>
               {settlements.map((s) => {
                 const k = keyOf(s);
+                const tone = rulingTone(s.ruling);
+                const accentBar =
+                  tone === 'lime'
+                    ? 'border-l-lime'
+                    : tone === 'amber'
+                      ? 'border-l-amber'
+                      : tone === 'danger'
+                        ? 'border-l-danger'
+                        : 'border-l-line';
                 return (
                   <motion.li
                     key={k}
@@ -84,7 +102,10 @@ export function SettlementStream({ settlements, loading }: SettlementStreamProps
                     animate={{ opacity: 1, height: 'auto', x: 0 }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    className={`px-3 py-2.5 ${fresh.has(k) ? 'animate-rowflash' : ''}`}
+                    whileHover={{ backgroundColor: 'rgba(20, 27, 37, 0.6)' }}
+                    className={`border-l-2 ${accentBar} px-3 py-2.5 ${
+                      fresh.has(k) ? 'animate-rowflash' : ''
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-[10px] text-ink-500">
@@ -93,19 +114,42 @@ export function SettlementStream({ settlements, loading }: SettlementStreamProps
                       <Tag tone={rulingTone(s.ruling)}>{s.ruling}</Tag>
                     </div>
                     <h3 className="mt-1 truncate text-xs text-ink-100">{s.title}</h3>
-                    <div className="mt-1.5 grid grid-cols-4 gap-1">
+                    <div className="mt-1.5 grid grid-cols-4 gap-1 inset-well border border-line p-1.5">
                       {(['reliability', 'quality', 'honesty', 'timeliness'] as const).map(
                         (d) => (
                           <div key={d} className="text-center">
-                            <div className="font-mono text-[11px] text-ink-100">
-                              {s.scores[d]}
+                            <div className="tnum font-mono text-[11px] text-ink-100">
+                              {String(s.scores[d]).padStart(2, '0')}
                             </div>
-                            <div className="label-mono text-[8px] text-ink-500">
+                            <div className="mt-0.5 h-0.5 w-full bg-base-600">
+                              <div
+                                className="h-full origin-left animate-barfill bg-cyan"
+                                style={{ width: `${s.scores[d]}%` }}
+                              />
+                            </div>
+                            <div className="label-mono mt-0.5 text-[8px] text-ink-500">
                               {d.slice(0, 3).toUpperCase()}
                             </div>
                           </div>
                         ),
                       )}
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <span className="label-mono text-ink-500">COMPOSITE</span>
+                      <div className="flex items-center gap-2">
+                        <MiniBars
+                          values={[
+                            s.scores.reliability,
+                            s.scores.quality,
+                            s.scores.honesty,
+                            s.scores.timeliness,
+                          ]}
+                          height={12}
+                        />
+                        <span className="tnum font-mono text-[11px] text-lime">
+                          {String(s.composite).padStart(3, '0')}
+                        </span>
+                      </div>
                     </div>
                     {s.note && (
                       <p className="mt-1.5 border-l-2 border-line pl-2 text-[11px] italic text-ink-300">

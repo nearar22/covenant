@@ -81,6 +81,76 @@ const config: Config = {
           '0%, 100%': { boxShadow: '0 0 0 0 rgba(196, 240, 66, 0)' },
           '50%': { boxShadow: '0 0 18px -6px rgba(196, 240, 66, 0.25)' },
         },
+        // Status LED: a hard on/off blink for the instrument-cluster header dots.
+        ledblink: {
+          '0%, 100%': { opacity: '1', filter: 'brightness(1.2)' },
+          '50%': { opacity: '0.45', filter: 'brightness(0.8)' },
+        },
+        // Sparkline draw-in: the trend trace strokes itself on mount.
+        sparkdraw: {
+          '0%': { strokeDashoffset: '240' },
+          '100%': { strokeDashoffset: '0' },
+        },
+        // Composite counter glow: the big readout settles with a brief flash.
+        countpop: {
+          '0%': { opacity: '0', transform: 'translateY(4px) scale(0.96)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        // Tape-in: a fresh settlement row slides in like a printer feed.
+        tapein: {
+          '0%': { opacity: '0', transform: 'translateX(14px)' },
+          '60%': { opacity: '1' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        // Heartbeat: the SYNC telemetry pip double-thumps like an ECG.
+        heartbeat: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.6' },
+          '14%': { transform: 'scale(1.5)', opacity: '1' },
+          '28%': { transform: 'scale(1)', opacity: '0.7' },
+          '42%': { transform: 'scale(1.35)', opacity: '0.95' },
+          '60%': { transform: 'scale(1)', opacity: '0.6' },
+        },
+        // Bar fill: mini telemetry bars grow from zero on entry.
+        barfill: {
+          '0%': { transform: 'scaleX(0)' },
+          '100%': { transform: 'scaleX(1)' },
+        },
+        // Scanline sweep: a thin highlight wipes across status strips.
+        scanwipe: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        // Data glint: a small readout flashes when freshly synced.
+        dataglint: {
+          '0%': { color: '#3ee0e0', textShadow: '0 0 8px rgba(62,224,224,0.7)' },
+          '100%': { color: '#e8edf4', textShadow: '0 0 0 rgba(62,224,224,0)' },
+        },
+        // Rise-in: a compact bottom-up reveal for stat tiles.
+        risein: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        // Stage pulse: the active consensus node ring expands and fades.
+        stagepulse: {
+          '0%': { boxShadow: '0 0 0 0 rgba(62, 224, 224, 0.45)' },
+          '70%': { boxShadow: '0 0 0 7px rgba(62, 224, 224, 0)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(62, 224, 224, 0)' },
+        },
+        // Ticker scroll: the activity rail marquees its content leftward.
+        tickerscroll: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        // Vertex pulse: radar vertex dots breathe so the plot reads as live.
+        vertexpulse: {
+          '0%, 100%': { r: '2.4', opacity: '0.85' },
+          '50%': { r: '3.4', opacity: '1' },
+        },
+        // Glow drift: the hero panel inner glow slowly rotates its hue weight.
+        glowdrift: {
+          '0%, 100%': { opacity: '0.5' },
+          '50%': { opacity: '1' },
+        },
       },
       animation: {
         sweep: 'sweep 4s linear infinite',
@@ -91,6 +161,19 @@ const config: Config = {
         tickerpulse: 'tickerpulse 2.4s ease-in-out infinite',
         radarsweep: 'radarsweep 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite',
         edgeglow: 'edgeglow 6s ease-in-out infinite',
+        ledblink: 'ledblink 2.6s steps(2, jump-none) infinite',
+        sparkdraw: 'sparkdraw 1.1s ease-out 1',
+        countpop: 'countpop 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1',
+        tapein: 'tapein 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1',
+        heartbeat: 'heartbeat 2.2s ease-in-out infinite',
+        barfill: 'barfill 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1',
+        scanwipe: 'scanwipe 7s ease-in-out infinite',
+        dataglint: 'dataglint 1.2s ease-out 1',
+        risein: 'risein 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1',
+        stagepulse: 'stagepulse 1.8s ease-out infinite',
+        tickerscroll: 'tickerscroll 32s linear infinite',
+        vertexpulse: 'vertexpulse 2.4s ease-in-out infinite',
+        glowdrift: 'glowdrift 5.5s ease-in-out infinite',
       },
     },
   },

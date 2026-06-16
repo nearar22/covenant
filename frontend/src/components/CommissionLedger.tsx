@@ -21,6 +21,13 @@ function statusTag(status: string) {
   return <Tag>{status}</Tag>;
 }
 
+function statusLed(status: string): string {
+  if (status === 'OPEN') return 'text-cyan';
+  if (status === 'ACCEPTED') return 'text-amber';
+  if (status === 'SETTLED') return 'text-lime';
+  return 'text-ink-500';
+}
+
 function rulingTag(ruling: string) {
   if (!ruling) return null;
   const tone = ruling === 'FULFILLED' ? 'lime' : ruling === 'PARTIAL' ? 'amber' : 'danger';
@@ -33,8 +40,12 @@ export function CommissionLedger({
   onPost,
   onAct,
 }: CommissionLedgerProps) {
+  const open = commissions.filter((c) => c.status === 'OPEN').length;
+  const inProgress = commissions.filter((c) => c.status === 'ACCEPTED').length;
+  const settled = commissions.filter((c) => c.status === 'SETTLED').length;
+
   return (
-    <section className="panel flex h-full flex-col">
+    <section className="panel panel-ticks flex h-full flex-col">
       <PanelHeading
         index="03"
         title="Commission Ledger"
@@ -47,6 +58,20 @@ export function CommissionLedger({
           </button>
         }
       />
+      {/* Status summary band: a quick read on the book before scanning rows. */}
+      {commissions.length > 0 && (
+        <div className="flex items-center gap-4 border-b border-line bg-base-800/40 px-3 py-1.5">
+          <span className="flex items-center gap-1.5 label-mono text-cyan">
+            <span className="led text-cyan" /> {String(open).padStart(2, '0')} OPEN
+          </span>
+          <span className="flex items-center gap-1.5 label-mono text-amber">
+            <span className="led text-amber" /> {String(inProgress).padStart(2, '0')} ACTIVE
+          </span>
+          <span className="flex items-center gap-1.5 label-mono text-lime">
+            <span className="led text-lime" /> {String(settled).padStart(2, '0')} SETTLED
+          </span>
+        </div>
+      )}
       <div className="scrollbar-thin flex-1 overflow-y-auto">
         {loading && commissions.length === 0 ? (
           <div className="space-y-2 p-3">
@@ -71,19 +96,32 @@ export function CommissionLedger({
           </div>
         ) : (
           <ul className="divide-y divide-line">
-            {[...commissions].reverse().map((c, i) => (
+            {[...commissions].reverse().map((c, i) => {
+              const accentBar =
+                c.status === 'OPEN'
+                  ? 'border-l-cyan'
+                  : c.status === 'ACCEPTED'
+                    ? 'border-l-amber'
+                    : c.status === 'SETTLED'
+                      ? 'border-l-lime'
+                      : 'border-l-line';
+              return (
               <motion.li
                 key={c.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.03, 0.3) }}
                 whileHover={{ backgroundColor: 'rgba(20, 27, 37, 0.6)' }}
-                className="px-3 py-2.5"
+                className={`data-row border-l-2 ${accentBar} px-3 py-2.5`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] text-ink-500">
+                      <span
+                        className={`led ${statusLed(c.status)}`}
+                        aria-hidden="true"
+                      />
+                      <span className="tnum font-mono text-[10px] text-ink-500">
                         {c.id}
                       </span>
                       {statusTag(c.status)}
@@ -94,8 +132,8 @@ export function CommissionLedger({
                       {c.brief}
                     </p>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <div className="font-mono text-sm text-lime">{c.reward}</div>
+                  <div className="shrink-0 border-l border-line pl-3 text-right">
+                    <div className="tnum font-mono text-sm text-lime">{c.reward}</div>
                     <div className="label-mono text-ink-500">GEN INTENT</div>
                   </div>
                 </div>
@@ -114,7 +152,8 @@ export function CommissionLedger({
                   )}
                 </div>
               </motion.li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>

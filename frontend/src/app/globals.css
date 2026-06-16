@@ -16,13 +16,14 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #0a0e14;
+  background-color: #070a0f;
   color: #e8edf4;
 }
 
 body {
   font-feature-settings: 'tnum' 1, 'cv01' 1;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
@@ -30,24 +31,51 @@ body {
   color: #e8edf4;
 }
 
-/* Hairline grid backdrop used across console panels. */
+/* Hairline grid backdrop used across console panels. Two-tier so the field
+   reads as a coarse coordinate grid overlaid with a fine measurement grid. */
 .grid-field {
+  background-color: #070a0f;
   background-image:
-    linear-gradient(to right, rgba(44, 58, 77, 0.35) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(44, 58, 77, 0.35) 1px, transparent 1px);
-  background-size: 28px 28px;
+    linear-gradient(to right, rgba(44, 58, 77, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(44, 58, 77, 0.4) 1px, transparent 1px),
+    linear-gradient(to right, rgba(44, 58, 77, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(44, 58, 77, 0.16) 1px, transparent 1px);
+  background-size:
+    120px 120px,
+    120px 120px,
+    24px 24px,
+    24px 24px;
+}
+
+/* Full-field vignette so the cluster focuses toward the center. Sits above
+   the canvas backdrop but below the data layer. */
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 120% 90% at 50% 42%,
+      transparent 55%,
+      rgba(5, 7, 11, 0.55) 100%
+    );
 }
 
 .panel {
-  background: #0e131b;
+  background:
+    linear-gradient(180deg, rgba(20, 27, 37, 0.35) 0%, rgba(14, 19, 27, 0) 64px),
+    #0c111a;
   border: 1px solid #1f2937;
   position: relative;
   box-shadow:
-    0 1px 0 0 rgba(232, 237, 244, 0.02) inset,
-    0 18px 40px -28px rgba(0, 0, 0, 0.8);
+    0 1px 0 0 rgba(232, 237, 244, 0.04) inset,
+    0 0 0 1px rgba(7, 10, 15, 0.6),
+    0 22px 48px -30px rgba(0, 0, 0, 0.95),
+    0 8px 18px -16px rgba(0, 0, 0, 0.9);
 }
 
-/* Hairline top accent so panels read as machined, not flat. */
+/* Brighter top hairline so each panel reads as machined, not flat. */
 .panel::before {
   content: '';
   position: absolute;
@@ -56,16 +84,102 @@ body {
   background: linear-gradient(
     to right,
     transparent,
-    rgba(196, 240, 66, 0.25),
-    rgba(62, 224, 224, 0.18),
+    rgba(196, 240, 66, 0.45),
+    rgba(62, 224, 224, 0.3),
     transparent
   );
-  opacity: 0.6;
+  opacity: 0.8;
   pointer-events: none;
 }
 
 .panel-bright {
   border-color: #2c3a4d;
+}
+
+/* Registration marks: machined L-brackets on each panel corner so every
+   frame reads like an instrument bezel rather than a plain div. */
+.panel-ticks::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(159, 176, 195, 0.55) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(159, 176, 195, 0.55) 1px, transparent 1px),
+    linear-gradient(to left, rgba(159, 176, 195, 0.55) 1px, transparent 1px),
+    linear-gradient(to top, rgba(159, 176, 195, 0.55) 1px, transparent 1px),
+    linear-gradient(to right, rgba(159, 176, 195, 0.55) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(159, 176, 195, 0.55) 1px, transparent 1px),
+    linear-gradient(to left, rgba(159, 176, 195, 0.55) 1px, transparent 1px),
+    linear-gradient(to top, rgba(159, 176, 195, 0.55) 1px, transparent 1px);
+  background-repeat: no-repeat;
+  background-size:
+    11px 1px,
+    1px 11px,
+    11px 1px,
+    1px 11px,
+    11px 1px,
+    1px 11px,
+    11px 1px,
+    1px 11px;
+  background-position:
+    top left,
+    top left,
+    top right,
+    top right,
+    bottom left,
+    bottom left,
+    bottom right,
+    bottom right;
+  opacity: 0.5;
+}
+
+/* Status LED used in panel headers. Color set via currentColor. */
+.led {
+  display: inline-block;
+  height: 7px;
+  width: 7px;
+  border-radius: 9999px;
+  background: currentColor;
+  box-shadow: 0 0 6px 0 currentColor;
+}
+
+/* Dense data rows: tabular zebra striping with a hairline baseline. */
+.data-row:nth-child(odd) {
+  background: rgba(20, 27, 37, 0.3);
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Hairline column rule for aligned monospace ledgers. */
+.col-rule {
+  border-left: 1px solid rgba(31, 41, 55, 0.7);
+}
+
+/* Inner-glow elevation used on the centerpiece radar panel. Layered shadows
+   give the hero instrument real depth. */
+.panel-elevated {
+  box-shadow:
+    0 1px 0 0 rgba(232, 237, 244, 0.05) inset,
+    0 0 60px -26px rgba(62, 224, 224, 0.35) inset,
+    0 0 0 1px rgba(7, 10, 15, 0.6),
+    0 30px 70px -36px rgba(0, 0, 0, 0.95);
+}
+
+/* Inset surface for data wells inside panels. */
+.inset-well {
+  background:
+    linear-gradient(180deg, rgba(5, 7, 11, 0.6), rgba(10, 14, 20, 0.2));
+  box-shadow:
+    0 1px 0 0 rgba(232, 237, 244, 0.03) inset,
+    0 2px 8px -4px rgba(0, 0, 0, 0.8) inset;
+}
+
+/* Sparkline trace primed for the sparkdraw keyframe. */
+.spark-trace {
+  stroke-dasharray: 240;
 }
 
 /* Live ticker beacon used by the settlement stream header. */
@@ -77,11 +191,35 @@ body {
   background: #3ee0e0;
 }
 
+/* Scrolling activity ticker rail. */
+.ticker-track {
+  display: inline-flex;
+  white-space: nowrap;
+  will-change: transform;
+}
+.ticker-mask {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+}
+
 .label-mono {
   font-family: var(--font-mono);
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   font-size: 10px;
+  line-height: 1.1;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -89,7 +227,7 @@ body {
   height: 8px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: #0a0e14;
+  background: #070a0f;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background: #1f2937;
@@ -116,17 +254,19 @@ body {
 
 .cv-input {
   width: 100%;
-  background: #0a0e14;
+  background: #070a0f;
   border: 1px solid #1f2937;
   color: #e8edf4;
   font-family: var(--font-body);
   font-size: 13px;
   padding: 8px 10px;
   outline: none;
+  box-shadow: 0 2px 8px -6px rgba(0, 0, 0, 0.8) inset;
 }
 .cv-input::placeholder {
   color: #5f7088;
 }
 .cv-input:focus {
   border-color: #c4f042;
+  box-shadow: 0 0 0 1px rgba(196, 240, 66, 0.3);
 }

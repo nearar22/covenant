@@ -44,6 +44,23 @@ export function ConsensusStage({ tx }: { tx: TxState }) {
         <div className="label-mono mb-3 text-ink-500">
           {rotating ? 'ROTATING LEADER, RETRYING' : `LIVE STATUS / ${live}`}
         </div>
+        {/* Stage progress track: a four-segment bar that fills as consensus advances. */}
+        <div className="mb-4 flex gap-1">
+          {STAGES.map((s, i) => (
+            <div key={s.key} className="h-1 flex-1 bg-base-600">
+              <div
+                className={`h-full origin-left transition-all duration-500 ${
+                  i < stageIdx
+                    ? 'bg-lime'
+                    : i === stageIdx
+                      ? 'bg-cyan animate-pulseline'
+                      : 'bg-transparent'
+                }`}
+                style={{ width: i <= stageIdx ? '100%' : '0%' }}
+              />
+            </div>
+          ))}
+        </div>
         <ol className="space-y-3">
           {STAGES.map((s, i) => {
             const done = i < stageIdx;
@@ -55,11 +72,11 @@ export function ConsensusStage({ tx }: { tx: TxState }) {
                     done
                       ? 'border-lime/50 bg-lime/15 text-lime'
                       : current
-                        ? 'border-cyan/60 bg-cyan/10 text-cyan'
+                        ? 'border-cyan/60 bg-cyan/10 text-cyan animate-stagepulse'
                         : 'border-line text-ink-500'
                   }`}
                 >
-                  {i + 1}
+                  {done ? '+' : i + 1}
                 </span>
                 <span
                   className={`text-sm ${
@@ -69,7 +86,13 @@ export function ConsensusStage({ tx }: { tx: TxState }) {
                   {s.label}
                 </span>
                 {current && (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan animate-pulseline" />
+                  <span className="ml-auto flex items-center gap-1.5">
+                    <span className="label-mono text-cyan">ACTIVE</span>
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan animate-pulseline" />
+                  </span>
+                )}
+                {done && (
+                  <span className="ml-auto label-mono text-lime">SEALED</span>
                 )}
               </li>
             );

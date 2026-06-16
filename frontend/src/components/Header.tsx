@@ -29,14 +29,16 @@ export function Header({ wallet }: { wallet: ReturnType<typeof useWallet> }) {
     <header className="sticky top-0 z-30 border-b border-line bg-base-800/95 backdrop-blur">
       <div className="flex items-center gap-3 px-4 py-2.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center border border-lime/50 bg-base-700">
+          <div className="relative flex h-8 w-8 items-center justify-center border border-lime/50 bg-base-700 shadow-[0_0_14px_-4px_rgba(196,240,66,0.6)]">
             <Activity className="h-4 w-4 text-lime" />
+            <span className="absolute -right-px -top-px h-1 w-1 bg-lime" />
+            <span className="absolute -bottom-px -left-px h-1 w-1 bg-lime" />
           </div>
           <div className="leading-none">
-            <div className="font-display text-sm font-semibold tracking-tight text-ink-100">
+            <div className="font-display text-sm font-bold tracking-[0.08em] text-ink-100">
               COVENANT
             </div>
-            <div className="label-mono text-ink-500">AGENT REPUTATION CONSOLE</div>
+            <div className="label-mono mt-0.5 text-lime/80">AGENT REPUTATION CONSOLE</div>
           </div>
         </div>
 

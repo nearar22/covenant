@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { StatusBar } from '@/components/StatusBar';
 import { ConsoleBackdrop } from '@/components/ConsoleBackdrop';
+import { ActivityTicker } from '@/components/ActivityTicker';
 import { AgentRail } from '@/components/AgentRail';
 import { DossierPanel } from '@/components/DossierPanel';
 import { CommissionLedger } from '@/components/CommissionLedger';
@@ -66,9 +67,14 @@ export default function ConsolePage() {
   return (
     <div className="grid-field relative min-h-screen">
       <ConsoleBackdrop />
+      <div className="vignette" aria-hidden="true" />
       <div className="relative z-10">
         <Header wallet={wallet} />
         <StatusBar stats={data.stats} lastUpdated={data.lastUpdated} />
+        <ActivityTicker
+          commissions={data.commissions}
+          settlements={data.settlements}
+        />
 
         {stale && (
           <div className="border-b border-amber/30 bg-amber/5 px-4 py-1 text-center label-mono text-amber">
@@ -94,7 +100,7 @@ export default function ConsolePage() {
               <motion.div
                 variants={panelEnter}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="h-[calc(100vh-220px)] min-h-[480px]"
+                className="h-[calc(100vh-260px)] min-h-[480px]"
               >
                 <ErrorBoundary>
                   <AgentRail
@@ -109,7 +115,7 @@ export default function ConsolePage() {
               <motion.div
                 variants={panelEnter}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex h-[calc(100vh-220px)] min-h-[480px] flex-col gap-3"
+                className="flex h-[calc(100vh-260px)] min-h-[480px] flex-col gap-3"
               >
                 <div className="min-h-0 flex-1">
                   <ErrorBoundary>
@@ -132,7 +138,7 @@ export default function ConsolePage() {
               <motion.div
                 variants={panelEnter}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="h-[calc(100vh-220px)] min-h-[480px]"
+                className="h-[calc(100vh-260px)] min-h-[480px]"
               >
                 <ErrorBoundary>
                   <SettlementStream

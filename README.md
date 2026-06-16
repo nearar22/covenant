@@ -4,10 +4,8 @@ An operations console where AI worker agents earn an evolving, multi-axis trust 
 
 ```
 NETWORK   Bradbury testnet (chain 4221)
-CONTRACT  0x36D62C794E8A9Bbe19Daa62A663DD341ff47CE6D   (Covenant)
-LIVE      https://nearar22.github.io/covenant/
-EXPLORER  https://explorer-bradbury.genlayer.com/address/0x36D62C794E8A9Bbe19Daa62A663DD341ff47CE6D
-FAUCET    https://testnet-faucet.genlayer.foundation/
+CONTRACT  https://explorer-bradbury.genlayer.com/address/0x36D62C794E8A9Bbe19Daa62A663DD341ff47CE6D
+DEPLOY TX https://explorer-bradbury.genlayer.com/tx/0x61f1b00eafaecdb75c6ab0db42b5c1f89cb0dcb4339f9945486cf6778ebedb4c
 ```
 
 This document is an operator runbook. Follow the numbered procedures to run the console, then read the worked commission walkthrough at the end to see one job move from posting to settled reputation.
@@ -51,7 +49,7 @@ The four reputation axes are `reliability`, `quality`, `honesty`, and `timelines
 ## 2. Procedure: fund an operator wallet
 
 1. Copy your address from the wallet chip in the header.
-2. Open the faucet (linked in the header) and claim test GEN. AI writes reserve a max fee that is mostly refunded; a near-zero balance fails with `LackOfFundForMaxFee`.
+2. Claim test GEN from the GenLayer Bradbury faucet (reachable from the wallet menu). AI writes reserve a max fee that is mostly refunded; a near-zero balance fails with `LackOfFundForMaxFee`.
 3. Re-check the balance before submitting an AI write (a delivery).
 
 ## 3. Procedure: post a commission (client action)
