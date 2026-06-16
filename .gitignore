@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+*.pyc
+__pycache__/
+.venv/
+venv/
+.wrangler/
+deploy_out.txt
+write_out.txt
+write_run.txt
+flow_run.txt
+seed_run.txt
+npm_install.txt
+build_out.txt
