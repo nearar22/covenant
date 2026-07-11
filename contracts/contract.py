@@ -142,17 +142,20 @@ def _clean_evidence(raw: str) -> str:
 
 
 def _fetch_evidence(url: str) -> str:
-    # Non-deterministic web read. Each node fetches the page itself and folds it
-    # to normalized ASCII text. Live pages can differ slightly between fetches,
-    # so this text is NOT compared byte-for-byte across nodes; instead it feeds
-    # the jury, and consensus is reached on the jury's ruling and scores. This is
-    # the correct pattern for URL evidence: fetch under nondeterminism, then let
-    # the equivalence principle agree on the derived judgment, not the raw bytes.
-    page = gl.get_webpage(url, mode="text")
-    text = _clean_evidence(str(page))
-    if not text:
-        raise gl.vm.UserError(ERR_TRANSIENT + " Evidence page returned no readable text")
-    return text
+    # Documented GenLayer web-access pattern: the non-deterministic web render
+    # runs INSIDE an equivalence-principle block. gl.nondet.web.render fetches
+    # the page text; every validator renders the same URL and strict_eq requires
+    # them to agree on the normalized ASCII text. The agreed evidence text is
+    # then handed to the LLM jury. Web reads must live inside an eq_principle
+    # block, never inside the LLM leader closure.
+    def render_page():
+        page = gl.nondet.web.render(url, mode="text")
+        text = _clean_evidence(str(page))
+        if not text:
+            raise gl.vm.UserError(ERR_TRANSIENT + " Evidence page returned no readable text")
+        return text
+
+    return gl.eq_principle.strict_eq(render_page)
 
 
 def _handle_leader_error(leaders_res, leader_fn) -> bool:
@@ -214,20 +217,23 @@ class Covenant(gl.Contract):
             + commission["criteria"]
         )
 
+        # When the deliverable is a URL, the worker points the jury at live
+        # evidence (a PR, a deployed page, a document). The page is fetched here
+        # under its OWN equivalence-principle round (gl.eq_principle.strict_eq
+        # over gl.nondet.web.render); every validator renders the same page and
+        # canonicalizes it to the same normalized text. That agreed text then
+        # feeds the LLM jury. This is the documented GenLayer pattern for web
+        # evidence: web reads live inside an equivalence block, not inside the
+        # LLM leader block.
+        evidence_text = _fetch_evidence(evidence_url) if evidence_url else ""
+
         def build_prompt() -> str:
-            # When the deliverable is a URL, the worker is pointing the jury at
-            # live evidence (a PR, a deployed page, a document). Each node fetches
-            # that page ITSELF here, inside its own nondeterministic round, and
-            # judges the FETCHED content, not the bare link. Consensus is then
-            # reached on the derived ruling and scores, which is the correct way
-            # to fold web data into an LLM judgment under GenLayer.
             if evidence_url:
-                evidence_text = _fetch_evidence(evidence_url)
                 evidence_block = (
-                    "The worker submitted a URL as evidence. You have independently fetched this "
-                    "page; judge the FETCHED PAGE CONTENT below against the acceptance criteria, "
-                    "not the link itself. If the fetched content is empty, an error page, a login "
-                    "wall, or unrelated to the brief, that is grounds for FAILED.\n"
+                    "The worker submitted a URL as evidence. The network has fetched this page "
+                    "under consensus; judge the FETCHED PAGE CONTENT below against the acceptance "
+                    "criteria, not the link itself. If the fetched content is empty, an error "
+                    "page, a login wall, or unrelated to the brief, that is grounds for FAILED.\n"
                     "Evidence URL: " + evidence_url + "\n"
                     "FETCHED PAGE CONTENT (untrusted):\n\"\"\"" + evidence_text[:MAX_EVIDENCE] + "\"\"\""
                 )

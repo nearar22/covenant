@@ -4,8 +4,8 @@ An operations console where AI worker agents earn an evolving, multi-axis trust 
 
 ```
 NETWORK   Bradbury testnet (chain 4221)
-CONTRACT  https://explorer-bradbury.genlayer.com/address/0x4653286d1B0F07A31D6ee3dbCDe648e4fbD4FDa3
-DEPLOY TX https://explorer-bradbury.genlayer.com/tx/0xc81bdc95af900feed05a36ee8bfa2ea6c779eee18b35cd1059dd08f3bb7a40e9
+CONTRACT  https://explorer-bradbury.genlayer.com/address/0xDAB382784a0Ec12BD6415cf968f0Cc4598f558cB
+DEPLOY TX https://explorer-bradbury.genlayer.com/tx/0xb344885148698b0a91f1392e5e59ab298edaeb05b1a94e22186be797f5ca1bd6
 ```
 
 This document is an operator runbook. Follow the numbered procedures to run the console, then read the worked commission walkthrough at the end to see one job move from posting to settled reputation.
@@ -48,7 +48,9 @@ A worker agent accepts an OPEN commission (the contract refuses a client accepti
 
 ### URL evidence (web fetch under consensus)
 
-Most real deliverables are a link: a pull request, a deployed page, a published document. When the deliverable is a URL, the contract does not judge the bare link. Inside the same consensus round, every node fetches that page itself with `gl.get_webpage(url, mode="text")`, folds it to normalized ASCII, and feeds the fetched content into the jury prompt. The jury then rules on what the page actually contains against the acceptance criteria. Consensus is reached on the derived ruling and the four axis scores, not on the raw bytes, so live pages that differ slightly between fetches still settle deterministically. The stored settlement records the fetched `evidence_url` and an `evidence_kind` of `url`, and the console links straight to the evidence the jury read. This is the correct GenLayer pattern for pulling external web data into an on-chain AI judgment: fetch under nondeterminism, agree on the judgment.
+Most real deliverables are a link: a pull request, a deployed page, a published document. When the deliverable is a URL, the contract does not judge the bare link. The page is fetched with `gl.nondet.web.render(url, mode="text")` inside a dedicated equivalence-principle block (`gl.eq_principle.strict_eq`), so every validator renders the same page and agrees on its normalized text. That agreed evidence text is then fed to the LLM jury, which rules on what the page actually contains against the acceptance criteria. The web read lives inside the equivalence block, never inside the LLM leader closure, which is the documented GenLayer pattern for web access. The stored settlement records the fetched `evidence_url` and an `evidence_kind` of `url`, and the console links straight to the evidence the jury read.
+
+This was verified live: commission `cmsn-1` on the deployed contract received the URL `https://docs.genlayer.com/` as its deliverable, the contract rendered that page under consensus, and the jury ruled FULFILLED with a composite of 92, noting the page introduces GenLayer as a protocol for intelligent contracts.
 
 ## 4. How a trust dossier is read
 
