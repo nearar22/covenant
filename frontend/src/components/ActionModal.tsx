@@ -244,10 +244,15 @@ export function ActionModal({
                           setDeliverable(e.target.value.slice(0, 900))
                         }
                         rows={6}
-                        placeholder="Submit your work as text, a URL, or a hash/reference. The AI jury rules it against the criteria."
+                        placeholder="Submit your work as text, or paste a URL (a PR, a deployed page, a doc). The AI jury rules it against the criteria."
                         className="cv-input resize-none"
                       />
                     </Field>
+                    <p className="border border-cyan/30 bg-cyan/5 px-2 py-1.5 text-xs text-ink-300">
+                      {/^https?:\/\/\S+$/.test(deliverable.trim())
+                        ? 'URL evidence detected. Every validator independently fetches this page on-chain and the jury judges the fetched content, not the link.'
+                        : 'Paste a URL and the contract fetches that page under consensus, then judges its content. Plain text is judged as written.'}
+                    </p>
                   </>
                 )}
 

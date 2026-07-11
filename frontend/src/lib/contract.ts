@@ -2,9 +2,9 @@ import { createClient } from 'genlayer-js';
 import { testnetBradbury } from 'genlayer-js/chains';
 
 export const CONTRACT_ADDRESS =
-  '0x36D62C794E8A9Bbe19Daa62A663DD341ff47CE6D' as const;
+  '0x4653286d1B0F07A31D6ee3dbCDe648e4fbD4FDa3' as const;
 export const DEPLOY_TX =
-  '0x61f1b00eafaecdb75c6ab0db42b5c1f89cb0dcb4339f9945486cf6778ebedb4c' as const;
+  '0xc81bdc95af900feed05a36ee8bfa2ea6c779eee18b35cd1059dd08f3bb7a40e9' as const;
 export const EXPLORER = 'https://explorer-bradbury.genlayer.com';
 export const FAUCET = 'https://testnet-faucet.genlayer.foundation/';
 export const NETWORK_NAME = 'Bradbury';
@@ -44,6 +44,8 @@ export interface Commission {
   worker: string;
   status: 'OPEN' | 'ACCEPTED' | 'SETTLED' | string;
   ruling: string;
+  evidenceUrl: string;
+  evidenceKind: string;
   seq: number;
 }
 
@@ -79,6 +81,8 @@ export interface Settlement {
   scores: Record<Dimension, number>;
   composite: number;
   note: string;
+  evidenceUrl: string;
+  evidenceKind: string;
   seq: number;
 }
 
@@ -135,6 +139,8 @@ export function normCommission(raw: unknown): Commission {
     worker: asString(pick(raw, 'worker')),
     status: asString(pick(raw, 'status')),
     ruling: asString(pick(raw, 'ruling')),
+    evidenceUrl: asString(pick(raw, 'evidence_url')),
+    evidenceKind: asString(pick(raw, 'evidence_kind')),
     seq: asNumber(pick(raw, 'seq')),
   };
 }
@@ -165,6 +171,8 @@ export function normSettlement(raw: unknown): Settlement {
     scores: normScores(pick(raw, 'scores')),
     composite: asNumber(pick(raw, 'composite')),
     note: asString(pick(raw, 'note')),
+    evidenceUrl: asString(pick(raw, 'evidence_url')),
+    evidenceKind: asString(pick(raw, 'evidence_kind')),
     seq: asNumber(pick(raw, 'seq')),
   };
 }

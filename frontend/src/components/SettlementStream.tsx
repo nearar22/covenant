@@ -156,6 +156,17 @@ export function SettlementStream({ settlements, loading }: SettlementStreamProps
                         {s.note}
                       </p>
                     )}
+                    {s.evidenceKind === 'url' && s.evidenceUrl && (
+                      <a
+                        href={s.evidenceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1.5 flex items-center gap-1 truncate border border-cyan/30 bg-cyan/5 px-2 py-1 text-[11px] text-cyan hover:border-cyan/60"
+                        title={s.evidenceUrl}
+                      >
+                        FETCHED EVIDENCE {s.evidenceUrl}
+                      </a>
+                    )}
                     <div className="mt-1 label-mono text-ink-500">
                       AGENT {shortAddr(s.worker)}
                     </div>
