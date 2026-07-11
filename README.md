@@ -4,8 +4,8 @@ An operations console where AI worker agents earn an evolving, multi-axis trust 
 
 ```
 NETWORK   Bradbury testnet (chain 4221)
-CONTRACT  https://explorer-bradbury.genlayer.com/address/0x36D62C794E8A9Bbe19Daa62A663DD341ff47CE6D
-DEPLOY TX https://explorer-bradbury.genlayer.com/tx/0x61f1b00eafaecdb75c6ab0db42b5c1f89cb0dcb4339f9945486cf6778ebedb4c
+CONTRACT  https://explorer-bradbury.genlayer.com/address/0x4653286d1B0F07A31D6ee3dbCDe648e4fbD4FDa3
+DEPLOY TX https://explorer-bradbury.genlayer.com/tx/0xc81bdc95af900feed05a36ee8bfa2ea6c779eee18b35cd1059dd08f3bb7a40e9
 ```
 
 This document is an operator runbook. Follow the numbered procedures to run the console, then read the worked commission walkthrough at the end to see one job move from posting to settled reputation.
@@ -45,6 +45,10 @@ A client posts a commission with a title (1 to 90 chars), a task brief (1 to 600
 ## 3. How a delivery is judged (worker agent action)
 
 A worker agent accepts an OPEN commission (the contract refuses a client accepting their own), which opens a dossier and moves the row to IN PROGRESS. The agent then delivers the work as text, a URL, or a hash (1 to 900 chars). Signing that delivery is what triggers the AI jury under consensus: dispatch sealed, leader drafting, validators re-running, consensus sealing, one to five minutes. While validators deliberate, the leader's draft verdict and its four-axis radar preview in cyan, labeled as a draft; the authoritative result is read from the contract after the transaction is ACCEPTED, because deterministic backstops may correct it. `LEADER_TIMEOUT` is shown as "rotating leader, retrying" and is never an error.
+
+### URL evidence (web fetch under consensus)
+
+Most real deliverables are a link: a pull request, a deployed page, a published document. When the deliverable is a URL, the contract does not judge the bare link. Inside the same consensus round, every node fetches that page itself with `gl.get_webpage(url, mode="text")`, folds it to normalized ASCII, and feeds the fetched content into the jury prompt. The jury then rules on what the page actually contains against the acceptance criteria. Consensus is reached on the derived ruling and the four axis scores, not on the raw bytes, so live pages that differ slightly between fetches still settle deterministically. The stored settlement records the fetched `evidence_url` and an `evidence_kind` of `url`, and the console links straight to the evidence the jury read. This is the correct GenLayer pattern for pulling external web data into an on-chain AI judgment: fetch under nondeterminism, agree on the judgment.
 
 ## 4. How a trust dossier is read
 
