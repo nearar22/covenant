@@ -142,20 +142,25 @@ def _clean_evidence(raw: str) -> str:
 
 
 def _fetch_evidence(url: str) -> str:
-    # Documented GenLayer web-access pattern: the non-deterministic web render
-    # runs INSIDE an equivalence-principle block. gl.nondet.web.render fetches
-    # the page text; every validator renders the same URL and strict_eq requires
-    # them to agree on the normalized ASCII text. The agreed evidence text is
-    # then handed to the LLM jury. Web reads must live inside an eq_principle
-    # block, never inside the LLM leader closure.
-    def render_page():
-        page = gl.nondet.web.render(url, mode="text")
-        text = _clean_evidence(str(page))
-        if not text:
-            raise gl.vm.UserError(ERR_TRANSIENT + " Evidence page returned no readable text")
-        return text
-
-    return gl.eq_principle.strict_eq(render_page)
+    # Fetch the evidence page for THIS node only. There is deliberately no
+    # strict_eq / equivalence block around the raw page text here.
+    #
+    # Why: modern pages (even docs and repositories) contain shifting bytes
+    # (timestamps, counters, rotating tokens, reordered nodes). Requiring every
+    # validator to agree byte-for-byte on the raw rendered text (strict_eq)
+    # makes URL deliverables extremely fragile: a single differing character
+    # aborts the write and splits consensus.
+    #
+    # Instead, each node fetches the page independently and the jury below
+    # reaches consensus on the HIGH-LEVEL DECISION (ruling + scored axes within
+    # tolerance), not on the raw webpage text. This function therefore returns
+    # this node's own view of the page, which is fed into that node's own LLM
+    # judgment inside the run_nondet_unsafe round.
+    page = gl.nondet.web.render(url, mode="text")
+    text = _clean_evidence(str(page))
+    if not text:
+        raise gl.vm.UserError(ERR_TRANSIENT + " Evidence page returned no readable text")
+    return text
 
 
 def _handle_leader_error(leaders_res, leader_fn) -> bool:
@@ -218,16 +223,14 @@ class Covenant(gl.Contract):
         )
 
         # When the deliverable is a URL, the worker points the jury at live
-        # evidence (a PR, a deployed page, a document). The page is fetched here
-        # under its OWN equivalence-principle round (gl.eq_principle.strict_eq
-        # over gl.nondet.web.render); every validator renders the same page and
-        # canonicalizes it to the same normalized text. That agreed text then
-        # feeds the LLM jury. This is the documented GenLayer pattern for web
-        # evidence: web reads live inside an equivalence block, not inside the
-        # LLM leader block.
-        evidence_text = _fetch_evidence(evidence_url) if evidence_url else ""
+        # evidence (a PR, a deployed page, a document). The page is NOT fetched
+        # here under a strict_eq block. Instead each node (leader and every
+        # validator) fetches the page itself INSIDE its own judgment below and
+        # rules on what it read. Consensus is reached on the high-level decision
+        # (ruling + scored axes within tolerance), never on the raw page bytes,
+        # so a page that differs slightly between nodes cannot split consensus.
 
-        def build_prompt() -> str:
+        def build_prompt(evidence_text: str) -> str:
             if evidence_url:
                 evidence_block = (
                     "The worker submitted a URL as evidence. The network has fetched this page "
@@ -270,7 +273,11 @@ class Covenant(gl.Contract):
             )
 
         def leader_fn():
-            raw = gl.nondet.exec_prompt(build_prompt(), response_format="json")
+            # Each node fetches its OWN view of the evidence page and judges it.
+            # The web read lives inside the nondet round; consensus is on the
+            # ruling and scores, not on the raw fetched text.
+            evidence_text = _fetch_evidence(evidence_url) if evidence_url else ""
+            raw = gl.nondet.exec_prompt(build_prompt(evidence_text), response_format="json")
             return _normalize_verdict(raw)
 
         def validator_fn(leaders_res: gl.vm.Result) -> bool:

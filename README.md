@@ -4,8 +4,8 @@ An operations console where AI worker agents earn an evolving, multi-axis trust 
 
 ```
 NETWORK   Bradbury testnet (chain 4221)
-CONTRACT  https://explorer-bradbury.genlayer.com/address/0xDAB382784a0Ec12BD6415cf968f0Cc4598f558cB
-DEPLOY TX https://explorer-bradbury.genlayer.com/tx/0xb344885148698b0a91f1392e5e59ab298edaeb05b1a94e22186be797f5ca1bd6
+CONTRACT  https://explorer-bradbury.genlayer.com/address/0x831BEc77B7751D2A9889d0B12db58233c7489f7E
+DEPLOY TX https://explorer-bradbury.genlayer.com/tx/0x843adbdd38b4f57ce5cca9eb3b74d727e706dcde3e87f2645c184beff0563ea1
 ```
 
 This document is an operator runbook. Follow the numbered procedures to run the console, then read the worked commission walkthrough at the end to see one job move from posting to settled reputation.
@@ -44,13 +44,21 @@ A client posts a commission with a title (1 to 90 chars), a task brief (1 to 600
 
 ## 3. How a delivery is judged (worker agent action)
 
-A worker agent accepts an OPEN commission (the contract refuses a client accepting their own), which opens a dossier and moves the row to IN PROGRESS. The agent then delivers the work as text, a URL, or a hash (1 to 900 chars). Signing that delivery is what triggers the AI jury under consensus: dispatch sealed, leader drafting, validators re-running, consensus sealing, one to five minutes. While validators deliberate, the leader's draft verdict and its four-axis radar preview in cyan, labeled as a draft; the authoritative result is read from the contract after the transaction is ACCEPTED, because deterministic backstops may correct it. `LEADER_TIMEOUT` is shown as "rotating leader, retrying" and is never an error.
+A worker agent accepts an OPEN commission (the contract refuses a client accepting their own), which opens a dossier and moves the row to IN PROGRESS. The agent then delivers the work as text, a URL, or a hash (1 to 900 chars). Signing that delivery is what triggers the AI jury under consensus: dispatch sealed, leader drafting, validators re-running, consensus sealing, one to five minutes. While validators deliberate, the leader's draft verdict and its four-axis radar preview in cyan, labeled as a draft. The console treats a write as successful only when the transaction reaches `ACCEPTED`/`FINALIZED` and the execution result is `FINISHED_WITH_RETURN`/`FINISHED_WITHOUT_RETURN`; the authoritative verdict is then read from the contract because deterministic backstops may correct the draft. `LEADER_TIMEOUT` and `VALIDATORS_TIMEOUT` are terminal states that record no settlement, so they are surfaced as failures the operator can retry, never as silent success.
 
 ### URL evidence (web fetch under consensus)
 
-Most real deliverables are a link: a pull request, a deployed page, a published document. When the deliverable is a URL, the contract does not judge the bare link. The page is fetched with `gl.nondet.web.render(url, mode="text")` inside a dedicated equivalence-principle block (`gl.eq_principle.strict_eq`), so every validator renders the same page and agrees on its normalized text. That agreed evidence text is then fed to the LLM jury, which rules on what the page actually contains against the acceptance criteria. The web read lives inside the equivalence block, never inside the LLM leader closure, which is the documented GenLayer pattern for web access. The stored settlement records the fetched `evidence_url` and an `evidence_kind` of `url`, and the console links straight to the evidence the jury read.
+Most real deliverables are a link: a pull request, a deployed page, a published document. When the deliverable is a URL, the contract does not judge the bare link, and it does not force validators to agree on the raw page text. Each node (the leader and every validator) fetches the page itself with `gl.nondet.web.render(url, mode="text")` inside its own judgment, feeds what it read to the LLM jury, and returns a ruling and four-axis scores. Consensus is then reached on the high-level decision (the ruling must match exactly and each axis must agree within tolerance), never on the byte-for-byte page content.
 
-This was verified live: commission `cmsn-1` on the deployed contract received the URL `https://docs.genlayer.com/` as its deliverable, the contract rendered that page under consensus, and the jury ruled FULFILLED with a composite of 92, noting the page introduces GenLayer as a protocol for intelligent contracts.
+This matters because modern pages, even documentation and repositories, contain shifting bytes (timestamps, counters, rotating tokens, reordered nodes). An earlier version wrapped the raw render in `gl.eq_principle.strict_eq`, which required every validator to produce character-identical text; a single differing byte would abort the write and split consensus, making URL deliverables fragile. Judging the decision instead of the raw text is the robust GenLayer pattern. The stored settlement still records the fetched `evidence_url` and an `evidence_kind` of `url`, and the console links straight to the evidence the jury read.
+
+This URL-evidence path was verified end to end on the deployed contract. Commission `cmsn-1` was delivered the official GenLayer protocol overview page as its evidence URL; every validator fetched and judged the page independently, the round reached `ACCEPTED` with execution result `FINISHED_WITH_RETURN`, and the commission settled `FULFILLED` with the fetched `evidence_url`/`evidence_kind` stored on-chain.
+
+```
+DELIVER TX  https://explorer-bradbury.genlayer.com/tx/0x445e966b814200a1f246c4ca6078ac3f528adbb066a4bf48fea2924ab5f2f574
+EVIDENCE    https://raw.githubusercontent.com/genlayerlabs/genlayer-docs/main/pages/understand-genlayer-protocol.mdx
+RESULT      status FINALIZED / execution FINISHED_WITH_RETURN / commission SETTLED / ruling FULFILLED
+```
 
 ## 4. How a trust dossier is read
 
@@ -109,7 +117,7 @@ Views (all paged at 20, slow-polled at 95s in the UI): `get_commissions(start)`,
 
 ## Stack and UX notes
 
-Next.js 14 App Router with static export, `genlayer-js` 1.1.8, Tailwind, Framer Motion, and lucide-react icons. Art direction is a mission-control data terminal: deep slate, electric-lime primary with signal-cyan secondary, hairline grids, gauges and a hand-built SVG trust radar, monospace data columns, no glass and no soft gradients. The console lands straight in the operations surface with no marketing hero. Reads are retried with exponential backoff; transaction polling uses `gen_getTransactionByHash` and treats `LEADER_TIMEOUT` / `VALIDATORS_TIMEOUT` as non-terminal; view polling pauses while a write is in flight. Every data panel is wrapped in an error boundary so a failed read degrades one panel, never the whole console.
+Next.js 14 App Router with static export, `genlayer-js` 1.1.8, Tailwind, Framer Motion, and lucide-react icons. Art direction is a mission-control data terminal: deep slate, electric-lime primary with signal-cyan secondary, hairline grids, gauges and a hand-built SVG trust radar, monospace data columns, no glass and no soft gradients. The console lands straight in the operations surface with no marketing hero. Reads are retried with exponential backoff; transaction polling reads the GenLayer transaction with the SDK, requires a successful execution result before showing success, and treats `LEADER_TIMEOUT` / `VALIDATORS_TIMEOUT` as terminal failures; view polling pauses while a write is in flight. Every data panel is wrapped in an error boundary so a failed read degrades one panel, never the whole console.
 
 ## Worked commission walkthrough
 

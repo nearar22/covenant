@@ -49,7 +49,7 @@ export function ActionModal({
 
   const submit = async () => {
     setFormError(null);
-    if (!wallet.address) {
+    if (!wallet.address || !wallet.provider) {
       await wallet.connect();
       return;
     }
@@ -62,7 +62,7 @@ export function ActionModal({
         return setFormError('Acceptance criteria must be 1 to 600 characters.');
       if (!/^\d+(\.\d+)?$/.test(reward.trim()) || Number(reward) <= 0)
         return setFormError('Reward intent must be a positive number.');
-      await run(wallet.address, 'post_commission', [
+      await run(wallet.address, wallet.provider, 'post_commission', [
         title.trim(),
         brief.trim(),
         criteria.trim(),
@@ -70,12 +70,15 @@ export function ActionModal({
       ]);
     } else if (kind === 'accept') {
       if (!commission) return;
-      await run(wallet.address, 'accept_commission', [commission.id]);
+      await run(wallet.address, wallet.provider, 'accept_commission', [commission.id]);
     } else {
       if (!commission) return;
       if (deliverable.trim().length < 1 || deliverable.length > 900)
         return setFormError('Deliverable must be 1 to 900 characters.');
-      await run(wallet.address, 'deliver', [commission.id, deliverable.trim()]);
+      await run(wallet.address, wallet.provider, 'deliver', [
+        commission.id,
+        deliverable.trim(),
+      ]);
     }
   };
 

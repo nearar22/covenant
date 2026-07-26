@@ -29,7 +29,7 @@ function activeStage(live: string): number {
 export function ConsensusStage({ tx }: { tx: TxState }) {
   const live = tx.liveStatus || 'PENDING';
   const stageIdx = activeStage(live);
-  const rotating = live === 'LEADER_TIMEOUT' || live === 'VALIDATORS_TIMEOUT';
+  const failed = live === 'LEADER_TIMEOUT' || live === 'VALIDATORS_TIMEOUT';
   const draftScores = tx.draft?.scores;
   const radar = {
     reliability: draftScores?.reliability ?? 0,
@@ -42,7 +42,7 @@ export function ConsensusStage({ tx }: { tx: TxState }) {
     <div className="grid gap-5 md:grid-cols-2">
       <div>
         <div className="label-mono mb-3 text-ink-500">
-          {rotating ? 'ROTATING LEADER, RETRYING' : `LIVE STATUS / ${live}`}
+          {failed ? `TERMINAL FAILURE / ${live}` : `LIVE STATUS / ${live}`}
         </div>
         {/* Stage progress track: a four-segment bar that fills as consensus advances. */}
         <div className="mb-4 flex gap-1">
@@ -109,9 +109,9 @@ export function ConsensusStage({ tx }: { tx: TxState }) {
           </a>
         )}
         <p className="mt-3 max-w-[40ch] text-xs text-ink-500">
-          An AI jury write settles under validator consensus. This takes one to
-          five minutes. Timeouts are normal: the network rotates the leader and
-          retries automatically.
+          An AI jury write settles under validator consensus. This usually takes
+          one to five minutes. Timeout states are terminal and are shown as
+          failures; retry only after confirming no state change.
         </p>
       </div>
 

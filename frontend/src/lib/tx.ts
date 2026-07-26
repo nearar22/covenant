@@ -17,7 +17,26 @@ const STATUS_NAME: Record<string, string> = {
 export const statusName = (s: unknown) =>
   STATUS_NAME[String(s)] ?? String(s).toUpperCase();
 
-const TERMINAL = new Set(['ACCEPTED', 'FINALIZED', 'UNDETERMINED', 'CANCELED']);
+const TERMINAL = new Set([
+  'ACCEPTED',
+  'FINALIZED',
+  'UNDETERMINED',
+  'CANCELED',
+  'LEADER_TIMEOUT',
+  'VALIDATORS_TIMEOUT',
+]);
+const EXECUTION_NAME: Record<string, string> = {
+  '0': 'NOT_VOTED',
+  '1': 'FINISHED_WITH_RETURN',
+  '2': 'FINISHED_WITH_ERROR',
+};
+
+function executionName(tx: unknown): string {
+  const named = pick(tx, 'txExecutionResultName');
+  if (named !== undefined && named !== null) return String(named).toUpperCase();
+  const raw = pick(tx, 'txExecutionResult');
+  return EXECUTION_NAME[String(raw)] ?? String(raw ?? 'NOT_VOTED').toUpperCase();
+}
 
 export interface LeaderDraft {
   ruling: string;
@@ -72,7 +91,7 @@ export async function pollUntilDecided(
   client: ReadClient,
   hash: `0x${string}`,
   onUpdate?: (status: string, draft: LeaderDraft | null) => void,
-): Promise<{ status: string; draft: LeaderDraft | null }> {
+): Promise<{ status: string; execution: string; draft: LeaderDraft | null }> {
   let draft: LeaderDraft | null = null;
   for (let i = 0; i < 160; i++) {
     const tx = await client
@@ -81,10 +100,11 @@ export async function pollUntilDecided(
     const status = statusName(
       tx ? (tx as { status?: unknown }).status : 'PENDING',
     );
+    const execution = tx ? executionName(tx) : 'NOT_VOTED';
     draft = (tx && extractLeaderDraft(tx)) ?? draft;
     onUpdate?.(status, draft);
-    if (TERMINAL.has(status)) return { status, draft };
+    if (TERMINAL.has(status)) return { status, execution, draft };
     await new Promise((r) => setTimeout(r, 8000));
   }
-  return { status: 'TIMEOUT', draft };
+  return { status: 'TIMEOUT', execution: 'NOT_VOTED', draft };
 }

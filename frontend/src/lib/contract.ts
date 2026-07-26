@@ -2,9 +2,9 @@ import { createClient } from 'genlayer-js';
 import { testnetBradbury } from 'genlayer-js/chains';
 
 export const CONTRACT_ADDRESS =
-  '0xDAB382784a0Ec12BD6415cf968f0Cc4598f558cB' as const;
+  '0x831BEc77B7751D2A9889d0B12db58233c7489f7E' as const;
 export const DEPLOY_TX =
-  '0xb344885148698b0a91f1392e5e59ab298edaeb05b1a94e22186be797f5ca1bd6' as const;
+  '0x843adbdd38b4f57ce5cca9eb3b74d727e706dcde3e87f2645c184beff0563ea1' as const;
 export const EXPLORER = 'https://explorer-bradbury.genlayer.com';
 export const FAUCET = 'https://testnet-faucet.genlayer.foundation/';
 export const NETWORK_NAME = 'Bradbury';
@@ -12,10 +12,18 @@ export const CHAIN_ID = 4221;
 
 export type ReadClient = ReturnType<typeof createClient>;
 
+type BrowserProvider = {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+  on?: (event: string, handler: (...args: unknown[]) => void) => void;
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
+};
+
 export const readClient: ReadClient = createClient({ chain: testnetBradbury });
 
-export const makeWalletClient = (account: `0x${string}`) =>
-  createClient({ chain: testnetBradbury, account });
+export const makeWalletClient = (
+  account: `0x${string}`,
+  provider: BrowserProvider,
+) => createClient({ chain: testnetBradbury, account, provider });
 
 export async function withRpcRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
   let last: unknown;

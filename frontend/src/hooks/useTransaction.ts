@@ -51,6 +51,7 @@ export function useTransaction(onConfirmed?: () => void) {
   const run = useCallback(
     async (
       account: `0x${string}`,
+      provider: NonNullable<Parameters<typeof makeWalletClient>[1]>,
       functionName: string,
       args: unknown[],
     ): Promise<boolean> => {
@@ -58,7 +59,8 @@ export function useTransaction(onConfirmed?: () => void) {
       busy.current = true;
       setState({ ...INITIAL, phase: 'wallet' });
       try {
-        const client = makeWalletClient(account);
+        if (!provider) throw new Error('Browser wallet provider is unavailable');
+        const client = makeWalletClient(account, provider);
         const hash = (await client.writeContract({
           address: CONTRACT_ADDRESS,
           functionName,
@@ -67,13 +69,19 @@ export function useTransaction(onConfirmed?: () => void) {
         })) as `0x${string}`;
         setState((s) => ({ ...s, phase: 'submitted', hash }));
         setState((s) => ({ ...s, phase: 'consensus' }));
-        const { status, draft } = await pollUntilDecided(
+        const { status, execution, draft } = await pollUntilDecided(
           client,
           hash,
           (liveStatus, d) =>
             setState((s) => ({ ...s, liveStatus, draft: d ?? s.draft })),
         );
-        if (status === 'ACCEPTED' || status === 'FINALIZED') {
+        const executionSucceeded =
+          execution === 'FINISHED_WITH_RETURN' ||
+          execution === 'FINISHED_WITHOUT_RETURN';
+        if (
+          (status === 'ACCEPTED' || status === 'FINALIZED') &&
+          executionSucceeded
+        ) {
           setState((s) => ({
             ...s,
             phase: 'confirmed',
@@ -89,11 +97,18 @@ export function useTransaction(onConfirmed?: () => void) {
           phase: 'error',
           finalStatus: status,
           error:
-            status === 'UNDETERMINED'
-              ? 'Validators could not agree on this verdict. You can retry the delivery.'
-              : status === 'CANCELED'
-                ? 'The transaction was canceled by the network.'
-                : 'The transaction did not settle in time. Check the explorer.',
+            (status === 'ACCEPTED' || status === 'FINALIZED') &&
+            !executionSucceeded
+              ? `Consensus completed, but contract execution failed (${execution}). No success was recorded.`
+              : status === 'UNDETERMINED'
+                ? 'Validators could not agree on this verdict. No settlement was recorded.'
+                : status === 'CANCELED'
+                  ? 'The transaction was canceled by the network.'
+                  : status === 'LEADER_TIMEOUT'
+                    ? 'The leader timed out before execution. No settlement was recorded; you can retry.'
+                    : status === 'VALIDATORS_TIMEOUT'
+                      ? 'Validators timed out before consensus. No settlement was recorded; you can retry.'
+                      : 'The transaction did not settle in time. Check the explorer.',
         }));
         busy.current = false;
         return false;

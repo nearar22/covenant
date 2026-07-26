@@ -27,6 +27,7 @@ export interface WalletState {
   chainId: number | null;
   connecting: boolean;
   hasProvider: boolean;
+  provider: Eth | null;
   error: string | null;
 }
 
@@ -36,11 +37,13 @@ export function useWallet() {
     chainId: null,
     connecting: false,
     hasProvider: false,
+    provider: null,
     error: null,
   });
 
   useEffect(() => {
-    setState((s) => ({ ...s, hasProvider: !!getEth() }));
+    const provider = getEth();
+    setState((s) => ({ ...s, hasProvider: !!provider, provider }));
   }, []);
 
   const refreshChain = useCallback(async () => {
@@ -65,33 +68,39 @@ export function useWallet() {
       const accounts = (await eth.request({
         method: 'eth_requestAccounts',
       })) as string[];
-      try {
-        await eth.request({
-          method: 'wallet_addEthereumChain',
-          params: [BRADBURY_PARAMS],
-        });
-      } catch {
-        /* chain may already exist */
-      }
+      if (!accounts[0]) throw new Error('Wallet returned no account');
       try {
         await eth.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: BRADBURY_PARAMS.chainId }],
         });
-      } catch {
-        /* user may decline switch */
+      } catch (switchError) {
+        const code = Number((switchError as { code?: unknown })?.code);
+        if (code !== 4902) throw switchError;
+        await eth.request({
+          method: 'wallet_addEthereumChain',
+          params: [BRADBURY_PARAMS],
+        });
+        await eth.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: BRADBURY_PARAMS.chainId }],
+        });
       }
       const cid = (await eth.request({ method: 'eth_chainId' })) as string;
+      const chainId = parseInt(cid, 16);
+      if (chainId !== CHAIN_ID) throw new Error('Wallet did not switch to Bradbury');
       setState((s) => ({
         ...s,
-        address: (accounts[0] ?? null) as `0x${string}` | null,
-        chainId: parseInt(cid, 16),
+        address: accounts[0] as `0x${string}`,
+        chainId,
         connecting: false,
+        hasProvider: true,
+        provider: eth,
       }));
     } catch (e) {
       const msg = /user rejected|denied/i.test(String(e))
-        ? 'Connection request was declined'
-        : 'Could not connect wallet';
+        ? 'Connection or network switch was declined'
+        : 'Could not connect wallet on Bradbury';
       setState((s) => ({ ...s, connecting: false, error: msg }));
     }
   }, []);
