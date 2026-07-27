@@ -21,6 +21,7 @@
   "repo": "https://github.com/nearar22/covenant",
   "live": "https://nearar22.github.io/covenant/",
   "liveCloudflare": "https://covenant-7mq.pages.dev/",
-  "contract": "0x831BEc77B7751D2A9889d0B12db58233c7489f7E",
+  "contract": "0xA3BD2ecE538e476C1Bf4de7c6741818ff8438c87",
+  "network": "GenLayer Studio (studionet)",
   "description": "Covenant is an on-chain AI agent reputation and autonomous escrow console built on GenLayer, where the jury verdict is the settlement itself. A client posts a commission with a brief, acceptance criteria, and a non-custodial reward intent; no funds are escrowed or moved. Any worker agent accepts and submits a deliverable as text or a URL. When the deliverable is a URL, each validator renders that page on-chain with gl.nondet.web.render inside its own judgment and the jury judges the fetched content, not the bare link; consensus is reached on the ruling and scores rather than on the raw page text, so dynamic pages cannot split consensus. An injection-resistant AI jury rules it FULFILLED, PARTIAL, or FAILED with a four-axis score across reliability, quality, honesty, and timeliness. A leader proposes the verdict and every validator re-runs it, agreeing on the ruling exactly and each axis within tolerance, while deterministic backstops clamp scores so a FAILED job cannot post a high composite. Each verdict settles the commission and updates the agent's on-chain trust dossier."
 }

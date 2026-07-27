@@ -3,10 +3,12 @@
 An operations console where AI worker agents earn an evolving, multi-axis trust dossier by delivering commissions that an injection-resistant AI jury settles under GenLayer validator consensus. No funds ever move: the escrow is modeled as non-custodial commitment and criteria state, and the jury verdict is the on-chain settlement that updates reputation. Operators only pay network fees.
 
 ```
-NETWORK   Bradbury testnet (chain 4221)
-CONTRACT  https://explorer-bradbury.genlayer.com/address/0x831BEc77B7751D2A9889d0B12db58233c7489f7E
-DEPLOY TX https://explorer-bradbury.genlayer.com/tx/0x843adbdd38b4f57ce5cca9eb3b74d727e706dcde3e87f2645c184beff0563ea1
+NETWORK   GenLayer Studio (studionet, chain 61999) — gasless, wallet-connected
+CONTRACT  https://explorer-studio.genlayer.com/address/0xA3BD2ecE538e476C1Bf4de7c6741818ff8438c87
+DEPLOY TX https://explorer-studio.genlayer.com/tx/0x399f5fe7d88cefa5b4bee97dd1cec0ed7bc3fea054655289b2bac864050fb213
 ```
+
+The console runs on GenLayer Studio (studionet), which is gasless and connects a browser wallet through the GenLayer Snap, with a per-browser session key as fallback when no wallet is present. It was previously deployed on Bradbury testnet (contract `0x831BEc77B7751D2A9889d0B12db58233c7489f7E`); the move to Studio was made for a reliable, funded-free public demo.
 
 This document is an operator runbook. Follow the numbered procedures to run the console, then read the worked commission walkthrough at the end to see one job move from posting to settled reputation.
 
@@ -52,12 +54,16 @@ Most real deliverables are a link: a pull request, a deployed page, a published 
 
 This matters because modern pages, even documentation and repositories, contain shifting bytes (timestamps, counters, rotating tokens, reordered nodes). An earlier version wrapped the raw render in `gl.eq_principle.strict_eq`, which required every validator to produce character-identical text; a single differing byte would abort the write and split consensus, making URL deliverables fragile. Judging the decision instead of the raw text is the robust GenLayer pattern. The stored settlement still records the fetched `evidence_url` and an `evidence_kind` of `url`, and the console links straight to the evidence the jury read.
 
-This URL-evidence path was verified end to end on the deployed contract. Commission `cmsn-1` was delivered the official GenLayer protocol overview page as its evidence URL; every validator fetched and judged the page independently, the round reached `ACCEPTED` with execution result `FINISHED_WITH_RETURN`, and the commission settled `FULFILLED` with the fetched `evidence_url`/`evidence_kind` stored on-chain.
+This URL-evidence path was verified end to end on two networks. On the current Studio deployment a full lifecycle (post, accept, deliver a URL) settled commission `cmsn-1` `FULFILLED`: every validator fetched and judged the official GenLayer overview page independently, and the fetched `evidence_url`/`evidence_kind` were stored on-chain. The identical path was also verified earlier on Bradbury, where a URL delivery reached `FINALIZED` with execution result `FINISHED_WITH_RETURN`.
 
 ```
-DELIVER TX  https://explorer-bradbury.genlayer.com/tx/0x445e966b814200a1f246c4ca6078ac3f528adbb066a4bf48fea2924ab5f2f574
-EVIDENCE    https://raw.githubusercontent.com/genlayerlabs/genlayer-docs/main/pages/understand-genlayer-protocol.mdx
-RESULT      status FINALIZED / execution FINISHED_WITH_RETURN / commission SETTLED / ruling FULFILLED
+STUDIO CONTRACT  0xA3BD2ecE538e476C1Bf4de7c6741818ff8438c87
+STUDIO DELIVER   0x748a7ef0bb8f066de189a98692fd02e015bb01a64581b195c0a19106fe957c2b
+EVIDENCE         https://raw.githubusercontent.com/genlayerlabs/genlayer-docs/main/pages/understand-genlayer-protocol/what-is-genlayer.mdx
+RESULT           commission SETTLED / ruling FULFILLED / evidence_kind url
+
+BRADBURY DELIVER https://explorer-bradbury.genlayer.com/tx/0x445e966b814200a1f246c4ca6078ac3f528adbb066a4bf48fea2924ab5f2f574
+RESULT           status FINALIZED / execution FINISHED_WITH_RETURN / commission SETTLED / ruling FULFILLED
 ```
 
 ## 4. How a trust dossier is read

@@ -1,14 +1,14 @@
-import { createClient } from 'genlayer-js';
-import { testnetBradbury } from 'genlayer-js/chains';
+import { createClient, createAccount, generatePrivateKey } from 'genlayer-js';
+import { studionet } from 'genlayer-js/chains';
 
 export const CONTRACT_ADDRESS =
-  '0x831BEc77B7751D2A9889d0B12db58233c7489f7E' as const;
+  '0xA3BD2ecE538e476C1Bf4de7c6741818ff8438c87' as const;
 export const DEPLOY_TX =
-  '0x843adbdd38b4f57ce5cca9eb3b74d727e706dcde3e87f2645c184beff0563ea1' as const;
-export const EXPLORER = 'https://explorer-bradbury.genlayer.com';
-export const FAUCET = 'https://testnet-faucet.genlayer.foundation/';
-export const NETWORK_NAME = 'Bradbury';
-export const CHAIN_ID = 4221;
+  '0x399f5fe7d88cefa5b4bee97dd1cec0ed7bc3fea054655289b2bac864050fb213' as const;
+export const EXPLORER = 'https://explorer-studio.genlayer.com';
+export const FAUCET = 'https://studio.genlayer.com/';
+export const NETWORK_NAME = 'GenLayer Studio';
+export const CHAIN_ID = 61999;
 
 export type ReadClient = ReturnType<typeof createClient>;
 
@@ -18,12 +18,44 @@ type BrowserProvider = {
   removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
 };
 
-export const readClient: ReadClient = createClient({ chain: testnetBradbury });
+// StudioNet is gasless and requires an account even for reads. A throwaway
+// session key (persisted per browser) is generated so reads always work; it
+// signs nothing when a real wallet is connected.
+const SESSION_PK_KEY = 'covenant_session_pk';
 
+function sessionAccount() {
+  let pk: `0x${string}` | undefined;
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem(SESSION_PK_KEY);
+    if (stored && /^0x[0-9a-fA-F]{64}$/.test(stored)) {
+      pk = stored as `0x${string}`;
+    } else {
+      pk = generatePrivateKey() as `0x${string}`;
+      localStorage.setItem(SESSION_PK_KEY, pk);
+    }
+  }
+  return createAccount(pk);
+}
+
+export const readClient: ReadClient = createClient({
+  chain: studionet,
+  account: sessionAccount(),
+});
+
+// When a wallet with the GenLayer Snap is connected, sign through it. Otherwise
+// fall back to the per-browser session key (testnet-only, gasless).
 export const makeWalletClient = (
-  account: `0x${string}`,
-  provider: BrowserProvider,
-) => createClient({ chain: testnetBradbury, account, provider });
+  account: `0x${string}` | null,
+  provider: BrowserProvider | null,
+) => {
+  if (account && provider) {
+    return createClient({ chain: studionet, account, provider });
+  }
+  return createClient({ chain: studionet, account: sessionAccount() });
+};
+
+export const sessionAddress = (): `0x${string}` =>
+  sessionAccount().address as `0x${string}`;
 
 export async function withRpcRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
   let last: unknown;

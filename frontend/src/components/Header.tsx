@@ -137,7 +137,7 @@ export function Header({ wallet }: { wallet: ReturnType<typeof useWallet> }) {
                       rel="noreferrer"
                       className="focusable mt-2 flex items-center justify-center gap-1.5 border border-line py-1.5 label-mono text-ink-300 hover:border-cyan/50 hover:text-cyan"
                     >
-                      <Droplet className="h-3 w-3" /> TESTNET FAUCET
+                      <Droplet className="h-3 w-3" /> OPEN GENLAYER STUDIO
                     </a>
                   </motion.div>
                 )}

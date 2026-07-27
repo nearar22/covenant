@@ -1,15 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CHAIN_ID } from '@/lib/contract';
+import { CHAIN_ID, sessionAddress } from '@/lib/contract';
 
-const BRADBURY_PARAMS = {
-  chainId: '0x107D',
-  chainName: 'GenLayer Bradbury Testnet',
-  nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
-  rpcUrls: ['https://rpc-bradbury.genlayer.com'],
-  blockExplorerUrls: ['https://explorer-bradbury.genlayer.com/'],
-};
+const STUDIO_CHAIN_HEX = '0x' + CHAIN_ID.toString(16);
 
 interface Eth {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -28,6 +22,7 @@ export interface WalletState {
   connecting: boolean;
   hasProvider: boolean;
   provider: Eth | null;
+  usingSession: boolean;
   error: string | null;
 }
 
@@ -38,29 +33,27 @@ export function useWallet() {
     connecting: false,
     hasProvider: false,
     provider: null,
+    usingSession: false,
     error: null,
   });
 
   useEffect(() => {
-    const provider = getEth();
-    setState((s) => ({ ...s, hasProvider: !!provider, provider }));
-  }, []);
-
-  const refreshChain = useCallback(async () => {
-    const eth = getEth();
-    if (!eth) return;
-    try {
-      const cid = (await eth.request({ method: 'eth_chainId' })) as string;
-      setState((s) => ({ ...s, chainId: parseInt(cid, 16) }));
-    } catch {
-      /* ignore */
-    }
+    setState((s) => ({ ...s, hasProvider: !!getEth() }));
   }, []);
 
   const connect = useCallback(async () => {
     const eth = getEth();
+    // No injected wallet: fall back to the gasless per-browser session signer
+    // so the user can still submit on StudioNet without MetaMask.
     if (!eth) {
-      setState((s) => ({ ...s, error: 'No wallet detected' }));
+      setState((s) => ({
+        ...s,
+        address: sessionAddress(),
+        chainId: CHAIN_ID,
+        provider: null,
+        usingSession: true,
+        error: null,
+      }));
       return;
     }
     setState((s) => ({ ...s, connecting: true, error: null }));
@@ -69,26 +62,24 @@ export function useWallet() {
         method: 'eth_requestAccounts',
       })) as string[];
       if (!accounts[0]) throw new Error('Wallet returned no account');
+      // Ask the wallet to move to StudioNet. If it is not a known chain the
+      // user stays where they are; StudioNet writes still go through the
+      // GenLayer Snap, which targets Studio directly.
       try {
         await eth.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: BRADBURY_PARAMS.chainId }],
+          params: [{ chainId: STUDIO_CHAIN_HEX }],
         });
-      } catch (switchError) {
-        const code = Number((switchError as { code?: unknown })?.code);
-        if (code !== 4902) throw switchError;
-        await eth.request({
-          method: 'wallet_addEthereumChain',
-          params: [BRADBURY_PARAMS],
-        });
-        await eth.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: BRADBURY_PARAMS.chainId }],
-        });
+      } catch {
+        /* chain not added in the wallet; Snap still targets Studio */
       }
-      const cid = (await eth.request({ method: 'eth_chainId' })) as string;
-      const chainId = parseInt(cid, 16);
-      if (chainId !== CHAIN_ID) throw new Error('Wallet did not switch to Bradbury');
+      let chainId: number | null = null;
+      try {
+        const cid = (await eth.request({ method: 'eth_chainId' })) as string;
+        chainId = parseInt(cid, 16);
+      } catch {
+        /* ignore */
+      }
       setState((s) => ({
         ...s,
         address: accounts[0] as `0x${string}`,
@@ -96,17 +87,23 @@ export function useWallet() {
         connecting: false,
         hasProvider: true,
         provider: eth,
+        usingSession: false,
       }));
     } catch (e) {
       const msg = /user rejected|denied/i.test(String(e))
-        ? 'Connection or network switch was declined'
-        : 'Could not connect wallet on Bradbury';
+        ? 'Connection request was declined'
+        : 'Could not connect wallet';
       setState((s) => ({ ...s, connecting: false, error: msg }));
     }
   }, []);
 
   const disconnect = useCallback(() => {
-    setState((s) => ({ ...s, address: null }));
+    setState((s) => ({
+      ...s,
+      address: null,
+      provider: null,
+      usingSession: false,
+    }));
   }, []);
 
   useEffect(() => {
@@ -114,20 +111,24 @@ export function useWallet() {
     if (!eth?.on) return;
     const onAccounts = (...args: unknown[]) => {
       const accts = args[0] as string[];
-      setState((s) => ({
-        ...s,
-        address: (accts && accts.length ? accts[0] : null) as `0x${string}` | null,
-      }));
+      setState((s) =>
+        s.usingSession
+          ? s
+          : {
+              ...s,
+              address: (accts && accts.length ? accts[0] : null) as
+                | `0x${string}`
+                | null,
+            },
+      );
     };
-    const onChain = () => refreshChain();
     eth.on('accountsChanged', onAccounts);
-    eth.on('chainChanged', onChain);
     return () => {
       eth.removeListener?.('accountsChanged', onAccounts);
-      eth.removeListener?.('chainChanged', onChain);
     };
-  }, [refreshChain]);
+  }, []);
 
-  const onRightChain = state.chainId === CHAIN_ID;
+  // StudioNet is gasless; any connected signer (wallet or session) can write.
+  const onRightChain = true;
   return { ...state, onRightChain, connect, disconnect };
 }

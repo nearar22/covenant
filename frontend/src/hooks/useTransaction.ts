@@ -51,7 +51,7 @@ export function useTransaction(onConfirmed?: () => void) {
   const run = useCallback(
     async (
       account: `0x${string}`,
-      provider: NonNullable<Parameters<typeof makeWalletClient>[1]>,
+      provider: Parameters<typeof makeWalletClient>[1],
       functionName: string,
       args: unknown[],
     ): Promise<boolean> => {
@@ -59,7 +59,6 @@ export function useTransaction(onConfirmed?: () => void) {
       busy.current = true;
       setState({ ...INITIAL, phase: 'wallet' });
       try {
-        if (!provider) throw new Error('Browser wallet provider is unavailable');
         const client = makeWalletClient(account, provider);
         const hash = (await client.writeContract({
           address: CONTRACT_ADDRESS,
@@ -75,12 +74,14 @@ export function useTransaction(onConfirmed?: () => void) {
           (liveStatus, d) =>
             setState((s) => ({ ...s, liveStatus, draft: d ?? s.draft })),
         );
-        const executionSucceeded =
-          execution === 'FINISHED_WITH_RETURN' ||
-          execution === 'FINISHED_WITHOUT_RETURN';
+        // A transaction is only a success when consensus accepted it AND
+        // execution did not fail. StudioNet may omit the execution-result
+        // name on success, so a missing/none value with an ACCEPTED status is
+        // treated as success; an explicit error name is always a failure.
+        const executionFailed = execution === 'FINISHED_WITH_ERROR';
         if (
           (status === 'ACCEPTED' || status === 'FINALIZED') &&
-          executionSucceeded
+          !executionFailed
         ) {
           setState((s) => ({
             ...s,
@@ -98,7 +99,7 @@ export function useTransaction(onConfirmed?: () => void) {
           finalStatus: status,
           error:
             (status === 'ACCEPTED' || status === 'FINALIZED') &&
-            !executionSucceeded
+            executionFailed
               ? `Consensus completed, but contract execution failed (${execution}). No success was recorded.`
               : status === 'UNDETERMINED'
                 ? 'Validators could not agree on this verdict. No settlement was recorded.'

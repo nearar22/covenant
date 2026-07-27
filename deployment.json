@@ -1,4 +1,12 @@
 {
-  "tx": "0xe0ab9f7af863c2e88e727f6c5f3d7f85073ac5ef90973abe2b6138273996f37e",
-  "address": "0x831BEc77B7751D2A9889d0B12db58233c7489f7E"
+  "network": "studionet",
+  "chainId": 61999,
+  "tx": "0x399f5fe7d88cefa5b4bee97dd1cec0ed7bc3fea054655289b2bac864050fb213",
+  "address": "0xA3BD2ecE538e476C1Bf4de7c6741818ff8438c87",
+  "explorer": "https://explorer-studio.genlayer.com",
+  "previousBradbury": {
+    "note": "Prior deployment on Bradbury testnet. Moved to StudioNet for a reliable, gasless, wallet-connected demo after Bradbury state-commit instability.",
+    "tx": "0xe0ab9f7af863c2e88e727f6c5f3d7f85073ac5ef90973abe2b6138273996f37e",
+    "address": "0x831BEc77B7751D2A9889d0B12db58233c7489f7E"
+  }
 }

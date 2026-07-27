@@ -49,7 +49,7 @@ export function ActionModal({
 
   const submit = async () => {
     setFormError(null);
-    if (!wallet.address || !wallet.provider) {
+    if (!wallet.address) {
       await wallet.connect();
       return;
     }
